@@ -29,6 +29,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -51,7 +52,8 @@ fun HomeScreen(
     navigateToSubirReceta: () -> Unit,
     navigateToFavoritos: () -> Unit,
     navigateToSimple: () -> Unit,
-    navigateToDetalleReceta: (Int) -> Unit
+    navigateToDetalleReceta: (Int) -> Unit,
+    navigateToLogout: () -> Unit // Añadida nueva función de navegación para Logout
 ) {
     // Color palette - elegant warm tones
     val primary = Color(0xFFD4A056)
@@ -76,16 +78,22 @@ fun HomeScreen(
 
     val hoy = LocalDate.now()
     val formattedDate = hoy.format(DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM"))
+
     val recetasHoy = remember(bandejas, platillos) {
-        val hoyBandejas = bandejas.filter {
+        val fechaId = bandejas.find {
             it.IdUsuario == idUsuario &&
                     it.IdCalendario.let { idCal ->
-                        true // This can be improved with better FechaCalendario handling
+                        // Reemplaza esto con una mejor lógica si puedes cruzar con la tabla `FechaCalendario`
+                        true // temporalmente acepta todos
                     }
+        }?.IdCalendario
+
+        val bandejasDelDia = bandejas.filter {
+            it.IdUsuario == idUsuario && it.IdCalendario == fechaId
         }
 
         platillos.filter { platillo ->
-            hoyBandejas.any { it.IdReceta == platillo.IdReceta }
+            bandejasDelDia.any { it.IdReceta == platillo.IdReceta }
         }
     }
 
@@ -138,12 +146,14 @@ fun HomeScreen(
                     )
                 }
 
+                // Icono de usuario - Ahora con navegación a Logout
                 Box(
                     modifier = Modifier
                         .size(48.dp)
                         .shadow(8.dp, CircleShape)
                         .clip(CircleShape)
-                        .background(cardBackground),
+                        .background(cardBackground)
+                        .clickable { navigateToLogout() }, // Añadido clickable para navegar a Logout
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -156,8 +166,6 @@ fun HomeScreen(
             }
 
             Spacer(modifier = Modifier.height(24.dp))
-
-
 
             Spacer(modifier = Modifier.height(32.dp))
 
@@ -701,3 +709,4 @@ fun ElegantBottomNavigation(
         )
     }
 }
+

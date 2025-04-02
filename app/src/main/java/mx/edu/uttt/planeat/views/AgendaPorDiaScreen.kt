@@ -1,5 +1,6 @@
 package mx.edu.uttt.planeat.views
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -24,7 +25,8 @@ fun AgendaPorDiaScreen(
     anio: Int,
     mes: Int,
     dia: Int,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    navigateToRecetaDetail: (Int) -> Unit // Agregado para navegar a detalles de receta
 ) {
     val cafeOscuro = Color(0xFF4E3629)
     val amarilloFuerte = Color(0xFFFFD94C)
@@ -80,9 +82,17 @@ fun AgendaPorDiaScreen(
                 Text("No hay recetas para esta fecha.", color = cafeOscuro.copy(alpha = 0.7f))
             } else {
                 recetasDelDia.forEach { receta ->
-                    Text("• ${receta.Titulo}", color = cafeOscuro)
+                    Text(
+                        text = "• ${receta.Titulo}",
+                        color = cafeOscuro,
+                        modifier = Modifier.clickable {
+                            // Llamada a la función de navegación cuando se hace clic en una receta
+                            navigateToRecetaDetail(receta.IdReceta)
+                        }
+                    )
                 }
             }
         }
     }
 }
+

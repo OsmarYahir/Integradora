@@ -10,7 +10,6 @@ import mx.edu.uttt.planeat.models.Usuario
 import mx.edu.uttt.planeat.network.ApiClient
 import mx.edu.uttt.planeat.response.UserPreferences
 
-
 class LoginViewModel(private val context: Context) : ViewModel() {
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
@@ -67,5 +66,13 @@ class LoginViewModel(private val context: Context) : ViewModel() {
                 _isLoading.value = false
             }
         }
+    }
+
+    // Función para cerrar sesión
+    fun logout() {
+        val preferences = UserPreferences(context)
+        preferences.clearUserId()  // Limpiar el id del usuario
+        _usuarioLogueado.value = null  // Limpiar el usuario logueado
+        _userId.value = -1  // Reiniciar el userId
     }
 }

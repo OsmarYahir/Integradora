@@ -2,21 +2,14 @@ package mx.edu.uttt.planeat.models
 
 import mx.edu.uttt.planeat.R
 import mx.edu.uttt.planeat.views.RecetaSocial
-
-// ✅ Extensión que convierte un Platillo en RecetaSocial y recibe el nombre del usuario
 fun Platillo.toRecetaSocial(nombreUsuario: String): RecetaSocial {
-    // Verificar si la imagen es válida, de lo contrario usar una imagen por defecto
-    val imagenReceta = if (this.Imagen.isNullOrEmpty()) {
-        "url/de/imagen/default.png" // O usa un recurso local si prefieres
-    } else {
-        this.Imagen
-    }
-
+    // Pass the Base64 string directly to RecetaSocial
+    // We'll handle the conversion in the UI
     return RecetaSocial(
         usuario = nombreUsuario,
-        imagenReceta = imagenReceta,  // Usar imagen valida o por defecto
+        imagenReceta = this.Imagen ?: "", // This is already a Base64 string
         titulo = this.Titulo,
         descripcion = this.Descripcion,
-        puntuacion = 4.5f // Establecer un valor predeterminado de puntuación si es necesario
+        puntuacion = 4.5f
     )
 }

@@ -10,18 +10,22 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import mx.edu.uttt.planeat.viewmodels.*
 import mx.edu.uttt.planeat.models.Platillo
+import mx.edu.uttt.planeat.states.LoginViewModelFactory
+import mx.edu.uttt.planeat.viewmodel.LoginViewModel
 import mx.edu.uttt.planeat.views.*
 
 @SuppressLint("StateFlowValueCalledInComposition")
 @Composable
 fun NavigationWrapper(navHostController: NavHostController) {
 
+    val context = LocalContext.current
     val platilloViewModel: PlatilloViewModel = viewModel()
     val usuarioViewModel: UsuariosViewModel = viewModel()
     val favoritoViewModel: FavoritoViewModel = viewModel()
@@ -43,7 +47,9 @@ fun NavigationWrapper(navHostController: NavHostController) {
                 navigateToFavoritos = { navHostController.navigate("favoritos") },
                 navigateToDetalleReceta = { idReceta ->
                     navHostController.navigate("recetaDetail/$idReceta")
-                }
+
+                },
+                navigateToLogout = { navHostController.navigate("logout") }
             )
         }
 
@@ -137,7 +143,6 @@ fun NavigationWrapper(navHostController: NavHostController) {
 
         composable("subirReceta") {
             SubirRecetaScreen(
-                idUsuarioActual = 1,
                 onBack = { navHostController.popBackStack() },
                 navController = navHostController
             )
@@ -166,6 +171,13 @@ fun NavigationWrapper(navHostController: NavHostController) {
         composable("agendaSimple") {
             AgendaSimpleScreen(onBack = { navHostController.popBackStack() })
         }
+
+        composable("logout") {
+            // Usar el ViewModel con la factory que provee el Context
+            val loginViewModel: LoginViewModel = viewModel(factory = LoginViewModelFactory(context))
+            LogoutScreen(viewModel = loginViewModel)
+        }
+
 
     }
 }

@@ -5,13 +5,14 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.RestaurantMenu
 import androidx.compose.material3.*
@@ -24,6 +25,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -33,6 +35,7 @@ import mx.edu.uttt.planeat.viewmodels.BandejaRecetaViewModel
 import mx.edu.uttt.planeat.viewmodels.FechaCalendarioViewModel
 import mx.edu.uttt.planeat.viewmodels.PlatilloViewModel
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.Locale
 
@@ -48,6 +51,7 @@ fun AgendaSimpleScreen(
     val grisFondo = Color(0xFFF5F5F5)
     val amarilloFuerte = Color(0xFFFFC107)
     val amarilloSuave = Color(0xFFFFECB3)
+    val verdeClaro = Color(0xFF8BC34A)
 
     val gradientBackground = Brush.verticalGradient(
         colors = listOf(
@@ -64,42 +68,73 @@ fun AgendaSimpleScreen(
 
     val bandejas by bandejaViewModel.bandejaRecetas.collectAsState()
     val platillos by platilloViewModel.platillos.collectAsState()
-
-    // Obtener la fecha de hoy
-    val hoy = LocalDate.now()
-    val fechaFormateada = remember {
-        val diaSemana = hoy.dayOfWeek.getDisplayName(TextStyle.FULL, Locale("es", "MX"))
-            .replaceFirstChar { it.uppercase() }
-        val dia = hoy.dayOfMonth
-        val mes = hoy.month.getDisplayName(TextStyle.FULL, Locale("es", "MX"))
-            .replaceFirstChar { it.uppercase() }
-        val year = hoy.year
-        "$diaSemana, $dia de $mes de $year"
-    }
-
-    // Cargar las fechas desde el viewModel
     val fechasCalendario by fechaCalendarioViewModel.fechas.collectAsState()
 
+    // Variables para el calendario
+    val fechaActual = LocalDate.now()
+    var fechaSeleccionada by remember { mutableStateOf(fechaActual) }
+    val anio = fechaSeleccionada.year
+    val mes = fechaSeleccionada.monthValue
+    val dia = fechaSeleccionada.dayOfMonth
+
+    // Calcular el número real de días en el mes actual
+    val diasEnMesActual = YearMonth.of(anio, mes).lengthOfMonth()
+
+    // Calcular el día de la semana en que comienza el mes (0 = Lunes, 6 = Domingo)
+    val primerDiaDelMes = LocalDate.of(anio, mes, 1).dayOfWeek.value % 7
+
+    // Obtener el nombre del mes en español
+    val nombreMes = fechaSeleccionada.month.getDisplayName(TextStyle.FULL, Locale("es", "MX"))
+        .replaceFirstChar { it.uppercase() }
+
+    // Formatear la fecha seleccionada
+    val fechaFormateada = remember(fechaSeleccionada) {
+        val diaSemana = fechaSeleccionada.dayOfWeek.getDisplayName(TextStyle.FULL, Locale("es", "MX"))
+            .replaceFirstChar { it.uppercase() }
+        val diaNum = fechaSeleccionada.dayOfMonth
+        val mesText = fechaSeleccionada.month.getDisplayName(TextStyle.FULL, Locale("es", "MX"))
+            .replaceFirstChar { it.uppercase() }
+        val year = fechaSeleccionada.year
+        "$diaSemana, $diaNum de $mesText de $year"
+    }
+
     var isLoading by remember { mutableStateOf(true) }
+    var mostrarCalendario by remember { mutableStateOf(false) }
 
     // We'll use this to keep track of the actual data
-    var recetasHoy by remember { mutableStateOf<List<Platillo>>(emptyList()) }
+    var recetasDelDia by remember { mutableStateOf<List<Platillo>>(emptyList()) }
+
+    // List of dates with scheduled recipes
+    var diasConRecetas by remember { mutableStateOf<Set<Int>>(emptySet()) }
 
     // Load the data first before processing it
-    LaunchedEffect(bandejas, platillos, fechasCalendario) {
+    LaunchedEffect(bandejas, platillos, fechasCalendario, fechaSeleccionada) {
         if (bandejas.isNotEmpty() && platillos.isNotEmpty() && fechasCalendario.isNotEmpty()) {
-            // This is the original logic from the provided code
-            val hoyBandejas = bandejas.filter { it.IdUsuario == idUsuario }
+            // Get bandejas for current user
+            val usuarioBandejas = bandejas.filter { it.IdUsuario == idUsuario }
 
-            val hoyBandejasConFecha = hoyBandejas.filter { bandeja ->
+            // Map days that have recipes in current month
+            val diasConRecetasDelMes = fechasCalendario
+                .filter { fecha ->
+                    fecha.Anio == anio &&
+                            fecha.Mes == mes &&
+                            usuarioBandejas.any { it.IdCalendario == fecha.IdCalendario }
+                }
+                .map { it.Dia }
+                .toSet()
+
+            diasConRecetas = diasConRecetasDelMes
+
+            // Get recipes for selected date
+            val diaSeleccionadoBandejas = usuarioBandejas.filter { bandeja ->
                 val fechaCalendario = fechasCalendario.find { it.IdCalendario == bandeja.IdCalendario }
-                fechaCalendario?.Anio == hoy.year &&
-                        fechaCalendario.Mes == hoy.monthValue &&
-                        fechaCalendario.Dia == hoy.dayOfMonth
+                fechaCalendario?.Anio == fechaSeleccionada.year &&
+                        fechaCalendario.Mes == fechaSeleccionada.monthValue &&
+                        fechaCalendario.Dia == fechaSeleccionada.dayOfMonth
             }
 
-            recetasHoy = platillos.filter { platillo ->
-                hoyBandejasConFecha.any { it.IdReceta == platillo.IdReceta }
+            recetasDelDia = platillos.filter { platillo ->
+                diaSeleccionadoBandejas.any { it.IdReceta == platillo.IdReceta }
             }
 
             isLoading = false
@@ -117,7 +152,7 @@ fun AgendaSimpleScreen(
             TopAppBar(
                 title = {
                     Text(
-                        "Agenda de Hoy",
+                        "Agenda",
                         color = cafeOscuro,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 20.sp,
@@ -175,7 +210,8 @@ fun AgendaSimpleScreen(
                                 colors = CardDefaults.cardColors(
                                     containerColor = amarilloSuave
                                 ),
-                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                                modifier = Modifier.clickable { mostrarCalendario = !mostrarCalendario }
                             ) {
                                 Row(
                                     modifier = Modifier
@@ -200,9 +236,11 @@ fun AgendaSimpleScreen(
 
                                     Spacer(modifier = Modifier.width(12.dp))
 
-                                    Column {
+                                    Column(
+                                        modifier = Modifier.weight(1f)
+                                    ) {
                                         Text(
-                                            "Hoy",
+                                            if (fechaSeleccionada.equals(LocalDate.now())) "Hoy" else "Fecha seleccionada",
                                             color = cafeOscuro,
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 16.sp
@@ -213,12 +251,83 @@ fun AgendaSimpleScreen(
                                             fontSize = 14.sp
                                         )
                                     }
+
+                                    Icon(
+                                        Icons.Default.CalendarMonth,
+                                        contentDescription = "Mostrar calendario",
+                                        tint = cafeOscuro
+                                    )
                                 }
                             }
                         }
                     }
 
-                    // Recipe list
+                    // Calendar view (visible only when clicked)
+                    item {
+                        AnimatedVisibility(
+                            visible = mostrarCalendario,
+                            enter = slideInVertically(
+                                initialOffsetY = { -40 },
+                                animationSpec = tween(durationMillis = 300)
+                            ) + fadeIn(animationSpec = tween(durationMillis = 300))
+                        ) {
+                            Card(
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.cardColors(containerColor = blanco),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp)
+                                ) {
+                                    // Month and year header
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(bottom = 8.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            Icons.Default.CalendarMonth,
+                                            contentDescription = "Calendario",
+                                            tint = amarilloFuerte,
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            "$nombreMes $anio",
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 18.sp,
+                                            color = cafeOscuro
+                                        )
+                                    }
+
+                                    Divider(color = cafeClaro.copy(alpha = 0.1f))
+                                    Spacer(modifier = Modifier.height(8.dp))
+
+                                    // Calendar implementation
+                                    CalendarView(
+                                        diasDelMes = (1..diasEnMesActual).toList(),
+                                        primerDiaDelMes = primerDiaDelMes,
+                                        diasConRecetas = diasConRecetas,
+                                        diaSeleccionado = fechaSeleccionada.dayOfMonth,
+                                        amarilloFuerte = amarilloFuerte,
+                                        cafeOscuro = cafeOscuro,
+                                        grisClaro = grisFondo,
+                                        verdeClaro = verdeClaro,
+                                        onClick = { diaSeleccionado ->
+                                            fechaSeleccionada = LocalDate.of(anio, mes, diaSeleccionado)
+                                            mostrarCalendario = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // Recipe list for selected date
                     item {
                         AnimatedVisibility(
                             visible = true,
@@ -239,7 +348,7 @@ fun AgendaSimpleScreen(
                                         .padding(16.dp)
                                 ) {
                                     Text(
-                                        text = "Recetas guardadas para hoy",
+                                        text = "Recetas para ${fechaSeleccionada.dayOfMonth} de $nombreMes",
                                         color = cafeOscuro,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 16.sp,
@@ -250,7 +359,7 @@ fun AgendaSimpleScreen(
 
                                     Spacer(modifier = Modifier.height(8.dp))
 
-                                    if (recetasHoy.isEmpty()) {
+                                    if (recetasDelDia.isEmpty()) {
                                         Box(
                                             modifier = Modifier
                                                 .fillMaxWidth()
@@ -258,13 +367,13 @@ fun AgendaSimpleScreen(
                                             contentAlignment = Alignment.Center
                                         ) {
                                             Text(
-                                                "No tienes recetas guardadas para hoy",
+                                                "No tienes recetas guardadas para este día",
                                                 color = cafeClaro.copy(alpha = 0.7f),
                                                 fontSize = 14.sp
                                             )
                                         }
                                     } else {
-                                        recetasHoy.forEachIndexed { index, receta ->
+                                        recetasDelDia.forEachIndexed { index, receta ->
                                             Row(
                                                 modifier = Modifier
                                                     .fillMaxWidth()
@@ -296,22 +405,173 @@ fun AgendaSimpleScreen(
                                                             maxLines = 1
                                                         )
                                                     }
+
+                                                    // 👇 NUEVO: Mostrar el tipo de comida
+                                                    val tipo = bandejas.firstOrNull { it.IdReceta == receta.IdReceta &&
+                                                            fechasCalendario.any { fc ->
+                                                                fc.IdCalendario == it.IdCalendario &&
+                                                                        fc.Anio == fechaSeleccionada.year &&
+                                                                        fc.Mes == fechaSeleccionada.monthValue &&
+                                                                        fc.Dia == fechaSeleccionada.dayOfMonth
+                                                            }
+                                                    }?.TipoComida ?: "Tipo no especificado"
+
+                                                    Text(
+                                                        text = "Tipo: $tipo",
+                                                        color = cafeOscuro.copy(alpha = 0.8f),
+                                                        fontSize = 13.sp,
+                                                        fontWeight = FontWeight.Light
+                                                    )
                                                 }
                                             }
 
-                                            // Add dividers between items, but not after the last one
-                                            if (index < recetasHoy.size - 1) {
+                                            if (index < recetasDelDia.size - 1) {
                                                 Divider(
                                                     color = cafeClaro.copy(alpha = 0.05f),
                                                     modifier = Modifier.padding(start = 30.dp)
                                                 )
                                             }
                                         }
+
+
+
                                     }
                                 }
                             }
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun CalendarView(
+    diasDelMes: List<Int>,
+    primerDiaDelMes: Int,
+    diasConRecetas: Set<Int>,
+    diaSeleccionado: Int,
+    amarilloFuerte: Color,
+    cafeOscuro: Color,
+    grisClaro: Color,
+    verdeClaro: Color,
+    onClick: (Int) -> Unit
+) {
+    val diasSemana = listOf("Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb")
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+    ) {
+        // Cabecera de días de la semana
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            diasSemana.forEach { dia ->
+                Text(
+                    text = dia,
+                    fontWeight = FontWeight.Bold,
+                    color = cafeOscuro,
+                    fontSize = 14.sp,
+                    modifier = Modifier.width(40.dp),
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+
+        // Generamos los días vacíos antes del primer día del mes
+        val todasLasCeldas = List(primerDiaDelMes) { -1 } + diasDelMes
+
+        todasLasCeldas.chunked(7).forEach { semana ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                semana.forEach { dia ->
+                    val tieneRecetas = dia in diasConRecetas
+                    val esDiaSeleccionado = dia == diaSeleccionado
+                    val esHoy = dia == LocalDate.now().dayOfMonth
+
+                    CalendarDayCell(
+                        dia = dia,
+                        tieneRecetas = tieneRecetas,
+                        amarilloFuerte = amarilloFuerte,
+                        cafeOscuro = cafeOscuro,
+                        grisClaro = grisClaro,
+                        verdeClaro = verdeClaro,
+                        esDiaSeleccionado = esDiaSeleccionado,
+                        esHoy = esHoy,
+                        onClick = onClick
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun CalendarDayCell(
+    dia: Int,
+    tieneRecetas: Boolean,
+    amarilloFuerte: Color,
+    cafeOscuro: Color,
+    grisClaro: Color,
+    verdeClaro: Color,
+    esDiaSeleccionado: Boolean,
+    esHoy: Boolean,
+    onClick: (Int) -> Unit
+) {
+    if (dia < 0) {
+        // Celda vacía para completar la cuadrícula
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .padding(4.dp)
+        )
+    } else {
+        Box(
+            modifier = Modifier
+                .padding(2.dp)
+                .size(40.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(
+                    when {
+                        esDiaSeleccionado -> verdeClaro
+                        tieneRecetas -> amarilloFuerte
+                        else -> grisClaro
+                    }
+                )
+                .shadow(
+                    elevation = if (esDiaSeleccionado || tieneRecetas) 4.dp else 0.dp,
+                    shape = RoundedCornerShape(12.dp)
+                )
+                .clickable { onClick(dia) },
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = dia.toString(),
+                    fontWeight = if (esDiaSeleccionado || tieneRecetas || esHoy) FontWeight.Bold else FontWeight.Normal,
+                    color = if (esDiaSeleccionado) Color.White else cafeOscuro,
+                    fontSize = 14.sp
+                )
+                if (tieneRecetas) {
+                    Box(
+                        modifier = Modifier
+                            .padding(top = 2.dp)
+                            .size(6.dp)
+                            .clip(CircleShape)
+                            .background(if (esDiaSeleccionado) Color.White else cafeOscuro)
+                    )
                 }
             }
         }

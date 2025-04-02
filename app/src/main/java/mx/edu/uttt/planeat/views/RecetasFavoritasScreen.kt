@@ -40,7 +40,6 @@ fun RecetasFavoritasScreen(
     favoritoViewModel: FavoritoViewModel = viewModel(),
     usuarioViewModel: UsuariosViewModel = viewModel()
 ) {
-    // Paleta de colores más moderna y elegante (igual que RecetasSocialScreen)
     val colorPrimary = Color(0xFFFA9600) // Naranja elegante
     val colorSecondary = Color(0xFF2D3142) // Azul oscuro casi negro
     val colorBackground = Color(0xFFF8F9FA) // Gris muy claro
@@ -63,10 +62,11 @@ fun RecetasFavoritasScreen(
         usuarioViewModel.loadUsuarios()
     }
 
-    // Filtrar solo los favoritos del usuario actual
+    // Filtrar solo los favoritos del usuario actualval platillosFavoritos = platillos.filter { platillo ->
+    //    favoritos.any { it.IdUsuario == idUsuarioActual && it.IdReceta == platillo.IdReceta }
+    //}
     val platillosFavoritos = platillos.filter { platillo ->
-        // Filtrar los favoritos por IdUsuario
-        favoritos.any { it.IdUsuario == idUsuarioActual }
+        favoritos.any { it.IdUsuario == idUsuarioActual && it.IdReceta == platillo.IdReceta }
     }
 
 
@@ -220,10 +220,9 @@ fun RecetasFavoritasScreen(
                     items(platillosFavoritos) { platillo ->
                         val nombreUsuario = usuariosMap[platillo.IdUsuario] ?: "Usuario creativo"
 
-                        // Usar el mismo componente de tarjeta que en RecetasSocialScreen
+                        // Verifica si la imagen está vacía o es nula antes de asignarla
                         val recetaSocial = platillo.toRecetaSocial(nombreUsuario).copy(
-
-                            imagenReceta = platillo.Imagen
+                            imagenReceta = if (platillo.Imagen.isNullOrEmpty()) "" else platillo.Imagen // Evitar null
                         )
 
                         RecetaSocialCard(

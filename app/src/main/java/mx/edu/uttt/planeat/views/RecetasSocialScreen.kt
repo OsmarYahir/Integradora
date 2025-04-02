@@ -185,6 +185,13 @@ fun RecetaSocialCard(
     var liked by remember { mutableStateOf(false) }
     var saved by remember { mutableStateOf(false) }
 
+    // Handle Base64 image conversion
+    val bitmap = remember(receta.imagenReceta) {
+        if (receta.imagenReceta.isNotEmpty()) {
+            base64ToBitmap(receta.imagenReceta)
+        } else null
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -198,26 +205,33 @@ fun RecetaSocialCard(
         colors = CardDefaults.cardColors(containerColor = colorSurface)
     ) {
         Box {
-            // Cargar la imagen con AsyncImage
-            AsyncImage(
-                model = receta.imagenReceta.ifEmpty { "url/de/imagen/default.png" },  // Usa imagen por defecto si está vacía
-                contentDescription = receta.titulo,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(220.dp),
-                contentScale = ContentScale.Crop,
-                onLoading = {
-                    // Aquí puedes manejar lo que sucede mientras se carga la imagen
-                },
-                onSuccess = {
-                    // Aquí puedes manejar lo que pasa cuando la imagen se carga correctamente
-                },
-                onError = {
-                    // Aquí puedes manejar los errores de carga de la imagen
-                    // Puede ser útil mostrar un ícono o imagen predeterminada
+            // Display the bitmap if available
+            if (bitmap != null) {
+                Image(
+                    bitmap = bitmap.asImageBitmap(),
+                    contentDescription = receta.titulo,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(220.dp),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                // Show placeholder if no image is available
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(220.dp)
+                        .background(colorSecondary.copy(alpha = 0.1f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.FoodBank,
+                        contentDescription = null,
+                        tint = colorSecondary.copy(alpha = 0.5f),
+                        modifier = Modifier.size(64.dp)
+                    )
                 }
-            )
-
+            }
             // Gradiente sobre la imagen para mejorar legibilidad
             Box(
                 modifier = Modifier
@@ -268,11 +282,7 @@ fun RecetaSocialCard(
                         color = colorSecondary
                     )
 
-                    Text(
-                        text = "Chef casero",
-                        fontSize = 12.sp,
-                        color = colorSecondary.copy(alpha = 0.6f)
-                    )
+
                 }
             }
 
@@ -321,41 +331,24 @@ enum class ImageLoadingState {
     Error
 }
 
-// Función mejorada para convertir Base64 a Bitmap con mejor manejo de errores
 fun base64ToBitmap(base64String: String): Bitmap? {
     return try {
-        // Eliminar prefijos comunes de Base64 si existen
-        val cleanBase64 = when {
-            base64String.contains(",") -> base64String.split(",")[1]
-            base64String.startsWith("data:") -> {
-                val commaIndex = base64String.indexOf(",")
-                if (commaIndex != -1) base64String.substring(commaIndex + 1) else base64String
-            }
-            else -> base64String
-        }
+        val cleanBase64 = base64String.substringAfter(",")
 
-        // Asegurarse de que la string tenga un múltiplo de 4 caracteres (requisito para Base64)
-        val paddedBase64 = when (cleanBase64.length % 4) {
-            0 -> cleanBase64
-            1 -> cleanBase64.substring(0, cleanBase64.length - 1) + "==="
-            2 -> cleanBase64 + "=="
-            3 -> cleanBase64 + "="
-            else -> cleanBase64
-        }
-
-        val decodedString = Base64.decode(paddedBase64, Base64.DEFAULT)
-        BitmapFactory.decodeByteArray(decodedString, 0, decodedString.size)
+        val decodedBytes = Base64.decode(cleanBase64, Base64.DEFAULT)
+        BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
     } catch (e: Exception) {
         e.printStackTrace()
         null
     }
 }
+
 // Asegúrate de tener una imagen placeholder en tus recursos
 // Añade esto a tu res/drawable folder
 
 data class RecetaSocial(
     val usuario: String,
-    val imagenReceta: String,
+    val imagenReceta: String = "",
     val titulo: String,
     val descripcion: String,
     val puntuacion: Float
