@@ -51,7 +51,11 @@ fun SubirRecetaScreen(
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicturePreview()
     ) {
-        it?.let { bitmap -> imagenBitmap = bitmap }
+        it?.let { bitmap ->
+            // Resize the bitmap to reduce size before upload
+            val resizedBitmap = resizeBitmap(bitmap, 1024)
+            imagenBitmap = resizedBitmap
+        }
     }
 
     val permisoCamaraLauncher =
@@ -73,7 +77,11 @@ fun SubirRecetaScreen(
                 title = { Text("Subir receta", color = cafeOscuro) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver", tint = cafeOscuro)
+                        Icon(
+                            Icons.Default.ArrowBack,
+                            contentDescription = "Volver",
+                            tint = cafeOscuro
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.smallTopAppBarColors(containerColor = blanco)
@@ -131,11 +139,12 @@ fun SubirRecetaScreen(
                         val imagenFile: File? = imagenBitmap?.let { bitmapToFile(it, context) }
 
                         if (imagenFile != null) {
-                            subirRecetaViewModel.uploadPlatilloWithImage(
+                            // Option 1: Upload directly to your API
+                            subirRecetaViewModel.uploadPlatilloDirectly(
                                 titulo = titulo,
                                 descripcion = descripcion,
                                 idUsuario = idUsuarioActual,
-                                imagenFile = imagenFile,
+                                imageFile = imagenFile,
                                 onSuccess = {
                                     navController.navigate("agregarIngredientes/${it.IdReceta}")
                                     scope.launch {
@@ -148,6 +157,37 @@ fun SubirRecetaScreen(
                                     }
                                 }
                             )
+
+                            /* Option 2: If you want to keep using Firebase first
+                            subirRecetaViewModel.uploadImageToFirebase(
+                                imagenFile,
+                                onSuccess = { imageUrl ->
+                                    // This would require modifying your API endpoint
+                                    subirRecetaViewModel.uploadPlatilloWithImageUrl(
+                                        titulo = titulo,
+                                        descripcion = descripcion,
+                                        idUsuario = idUsuarioActual,
+                                        imageUrl = imageUrl,
+                                        onSuccess = {
+                                            navController.navigate("agregarIngredientes/${it.IdReceta}")
+                                            scope.launch {
+                                                snackbarHostState.showSnackbar("Receta subida con éxito.")
+                                            }
+                                        },
+                                        onError = { errorMessage ->
+                                            scope.launch {
+                                                snackbarHostState.showSnackbar("Error: $errorMessage")
+                                            }
+                                        }
+                                    )
+                                },
+                                onError = { errorMessage ->
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar("Error al subir la imagen: $errorMessage")
+                                    }
+                                }
+                            )
+                            */
                         } else {
                             scope.launch {
                                 snackbarHostState.showSnackbar("Toma una foto para subir la receta.")
@@ -170,11 +210,23 @@ fun SubirRecetaScreen(
 
 // Convierte Bitmap a archivo temporal JPG
 fun bitmapToFile(bitmap: Bitmap, context: android.content.Context): File {
-    val file = File(context.cacheDir, "imagen_receta.jpg")
+    val file = File(context.cacheDir, "imagen_receta_${System.currentTimeMillis()}.jpg")
     file.createNewFile()
+
+    val bos = ByteArrayOutputStream()
+    bitmap.compress(Bitmap.CompressFormat.JPEG, 80, bos) // Reduce quality to 80%
+
     val outputStream = FileOutputStream(file)
-    bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
+    outputStream.write(bos.toByteArray())
     outputStream.flush()
     outputStream.close()
+
     return file
+}
+
+fun resizeBitmap(bitmap: Bitmap, maxSize: Int): Bitmap {
+    val ratio = Math.min(maxSize.toFloat() / bitmap.width, maxSize.toFloat() / bitmap.height)
+    val width = Math.round(bitmap.width * ratio)
+    val height = Math.round(bitmap.height * ratio)
+    return Bitmap.createScaledBitmap(bitmap, width, height, false)
 }

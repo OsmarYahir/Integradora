@@ -11,7 +11,6 @@ import mx.edu.uttt.planeat.network.ApiClient
 class PlatilloViewModel : ViewModel() {
 
 
-
     private val _platillos = MutableStateFlow<List<Platillo>>(emptyList())
     val platillos = _platillos.asStateFlow()
 
@@ -21,11 +20,8 @@ class PlatilloViewModel : ViewModel() {
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage = _errorMessage.asStateFlow()
 
-    // Platillo seleccionado para detalle
     private val _platilloSeleccionado = MutableStateFlow<Platillo?>(null)
     val platilloSeleccionado = _platilloSeleccionado.asStateFlow()
-
-
     fun selectPlatillo(platillo: Platillo) {
         _platilloSeleccionado.value = platillo
     }

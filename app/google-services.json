@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "934014877880",
+    "project_id": "trabajoprofe-53caf",
+    "storage_bucket": "trabajoprofe-53caf.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:934014877880:android:9b548dab79017c859b744d",
+        "android_client_info": {
+          "package_name": "mx.edu.uttt.planeat"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDts0fkYX_l26dUrxl-VfldyK8OVVFsigo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,24 +1,32 @@
 package mx.edu.uttt.planeat.views
 
 import android.util.Log
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.FoodBank
+import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.lifecycle.viewmodel.compose.viewModel
 import mx.edu.uttt.planeat.models.Platillo
-import mx.edu.uttt.planeat.models.RecetaDetalle
 import mx.edu.uttt.planeat.models.toRecetaSocial
 import mx.edu.uttt.planeat.response.UserPreferences
 import mx.edu.uttt.planeat.viewmodels.FavoritoViewModel
@@ -32,6 +40,13 @@ fun RecetasFavoritasScreen(
     favoritoViewModel: FavoritoViewModel = viewModel(),
     usuarioViewModel: UsuariosViewModel = viewModel()
 ) {
+    // Paleta de colores más moderna y elegante (igual que RecetasSocialScreen)
+    val colorPrimary = Color(0xFFFA9600) // Naranja elegante
+    val colorSecondary = Color(0xFF2D3142) // Azul oscuro casi negro
+    val colorBackground = Color(0xFFF8F9FA) // Gris muy claro
+    val colorSurface = Color.White
+    val colorAccent = Color(0xFFE76F51) // Coral para acentos
+
     val favoritos by favoritoViewModel.favoritos.collectAsState(initial = emptyList())
     val platillos by platilloViewModel.platillos.collectAsState()
     val isLoading by platilloViewModel.isLoading.collectAsState()
@@ -48,61 +63,175 @@ fun RecetasFavoritasScreen(
         usuarioViewModel.loadUsuarios()
     }
 
+    // Filtrar solo los favoritos del usuario actual
     val platillosFavoritos = platillos.filter { platillo ->
-        favoritos.any { it.IdReceta == platillo.IdReceta && it.IdUsuario == idUsuarioActual }
+        // Filtrar los favoritos por IdUsuario
+        favoritos.any { it.IdUsuario == idUsuarioActual }
     }
 
+
     Scaffold(
-        containerColor = Color(0xFFF9F9F9)
+        containerColor = colorBackground
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(16.dp)
+                .padding(horizontal = 16.dp)
         ) {
-            Text(
-                text = "Recetas Favoritas",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF4E3629)
-            )
-
             Spacer(modifier = Modifier.height(16.dp))
 
-            if (isLoading) {
-                CircularProgressIndicator(color = Color(0xFF4E3629))
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-
-            errorMessage?.let {
-                Text(text = it, color = Color.Red)
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-
-            if (platillosFavoritos.isEmpty()) {
-                Text(
-                    text = "No tienes platillos favoritos aún.",
-                    fontSize = 16.sp,
-                    color = Color(0xFF4E3629)
+            // Encabezado con estilo moderno
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Favorite,
+                    contentDescription = null,
+                    tint = colorAccent,
+                    modifier = Modifier.size(32.dp)
                 )
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Column {
+                    Text(
+                        text = "Mis Favoritas",
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = colorSecondary
+                    )
+
+                    Text(
+                        text = "Recetas que has guardado",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = colorSecondary.copy(alpha = 0.7f)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Estado de carga con animación
+            AnimatedVisibility(
+                visible = isLoading,
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(
+                        color = colorPrimary,
+                        modifier = Modifier.size(48.dp)
+                    )
+                }
+            }
+
+            // Mensaje de error con estilo moderno
+            errorMessage?.let {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFFFFEBEE)
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.FoodBank,
+                            contentDescription = null,
+                            tint = Color(0xFFB71C1C)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = it,
+                            color = Color(0xFFB71C1C),
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+
+            // Mensaje cuando no hay favoritos
+            if (platillosFavoritos.isEmpty() && !isLoading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 48.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Image(
+                            painter = painterResource(id = mx.edu.uttt.planeat.R.drawable.logo),
+                            contentDescription = "No hay favoritos",
+                            modifier = Modifier.size(100.dp)
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Text(
+                            text = "Aún no tienes recetas favoritas",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = colorSecondary
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Text(
+                            text = "Guarda tus recetas preferidas para acceder rápidamente",
+                            fontSize = 14.sp,
+                            color = colorSecondary.copy(alpha = 0.7f),
+                            modifier = Modifier.padding(horizontal = 32.dp)
+                        )
+
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        // Botón para explorar recetas
+                        Button(
+                            onClick = { /* Navegar a explorar */ },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = colorPrimary
+                            ),
+                            shape = RoundedCornerShape(20.dp)
+                        ) {
+                            Text(
+                                text = "Explorar recetas",
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
             } else {
+                // Lista de recetas favoritas
                 LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    contentPadding = PaddingValues(bottom = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(24.dp)
                 ) {
                     items(platillosFavoritos) { platillo ->
-                        val nombreUsuario = usuariosMap[platillo.IdUsuario] ?: "Usuario desconocido"
+                        val nombreUsuario = usuariosMap[platillo.IdUsuario] ?: "Usuario creativo"
 
+                        // Usar el mismo componente de tarjeta que en RecetasSocialScreen
                         val recetaSocial = platillo.toRecetaSocial(nombreUsuario).copy(
-                            imagenUsuario = mx.edu.uttt.planeat.R.drawable.logo, // asegúrate de tener una imagen válida
-                            imagenReceta = mx.edu.uttt.planeat.R.drawable.logo
+
+                            imagenReceta = platillo.Imagen
                         )
 
                         RecetaSocialCard(
                             receta = recetaSocial,
-                            amarilloFuerte = Color(0xFFFFD94C),
-                            cafeOscuro = Color(0xFF4E3629),
-                            blanco = Color.White,
+                            colorPrimary = colorPrimary,
+                            colorSecondary = colorSecondary,
+                            colorSurface = colorSurface,
+                            colorAccent = colorAccent,
                             onNavigateToDetail = {
                                 Log.d("FAVORITOS", "Navegando a detalle de ${platillo.IdReceta}")
                                 onNavigateToDetail(platillo)
@@ -114,8 +243,3 @@ fun RecetasFavoritasScreen(
         }
     }
 }
-
-
-
-
-

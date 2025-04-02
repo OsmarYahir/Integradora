@@ -97,7 +97,7 @@ fun NavigationWrapper(navHostController: NavHostController) {
             AgendaDetailScreen(
                 idReceta = idReceta,
                 onBack = { navHostController.popBackStack() },
-                onnavigateToGuardar = { anio, mes, dia ->
+                onnavigateToGuardar = { anio, mes, dia, idReceta, tipoComida ->
                     navHostController.navigate("guardarReceta/$idReceta/$anio/$mes/$dia")
                 }
             )
@@ -109,7 +109,7 @@ fun NavigationWrapper(navHostController: NavHostController) {
             AgendaDetailScreen(
                 idReceta = -1, // o cualquier valor dummy
                 onBack = { navHostController.popBackStack() },
-                onnavigateToGuardar = { anio, mes, dia ->
+                onnavigateToGuardar = { anio, mes, dia, idReceta, tipoComida ->
                     // Puedes redirigir a una pantalla diferente o simplemente ignorar
                 }
             )
@@ -123,15 +123,16 @@ fun NavigationWrapper(navHostController: NavHostController) {
             val mes = backStackEntry.arguments?.getString("mes")?.toIntOrNull() ?: return@composable
             val dia = backStackEntry.arguments?.getString("dia")?.toIntOrNull() ?: return@composable
 
-            val fechaSeleccionada = "$anio-$mes-$dia"
-
             GuardarRecetaScreen(
-                fecha = fechaSeleccionada,
+                anio = anio,
+                mes = mes,
+                dia = dia,
                 idReceta = idReceta,
                 onBack = { navHostController.popBackStack() },
-                navigateToHome = { navHostController.navigate("home") }
+                navigateToHome = { navHostController.navigate("home") } // 👈 aquí defines la navegación a Home
             )
         }
+
 
 
         composable("subirReceta") {

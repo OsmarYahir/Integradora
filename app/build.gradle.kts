@@ -1,6 +1,8 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.googleServices)
+    alias(libs.plugins.crashlytics)
 }
 
 android {
@@ -59,6 +61,18 @@ android {
 
 
 dependencies {
+
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.crashlytics)
+    implementation("com.google.firebase:firebase-analytics")
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.firestore)
+    implementation(libs.firebase.realtime)
+    implementation(libs.firebase.config)
+    //implementation ('com.google.firebase:firebase-storage-ktx')
+
+    implementation("io.coil-kt:coil-compose:2.1.0")
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -85,8 +99,9 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
     // Firebase Database (opcional si lo usas)
-    implementation(libs.firebase.database.ktx)
+
     implementation(libs.androidx.espresso.core)
+    implementation(libs.firebase.storage.ktx)
 
     // Tests
     testImplementation(libs.junit)
@@ -108,6 +123,8 @@ dependencies {
     implementation("androidx.camera:camera-view:1.4.1")
     implementation("androidx.camera:camera-extensions:1.4.1")
     implementation("io.coil-kt:coil-compose:2.5.0")
+
+
 
 
 

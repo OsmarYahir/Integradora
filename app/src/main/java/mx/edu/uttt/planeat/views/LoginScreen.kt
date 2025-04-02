@@ -45,6 +45,7 @@ val amarilloFuerte = Color(0xFFFFD94C)
 val amarilloClaro = Color(0xFFFFF8E1)
 val cafeOscuro = Color(0xFF4E3629)
 val cafeMedio = Color(0xFF8D6E63)
+
 @Composable
 fun LoginScreen(navigateToSignUp: () -> Unit, navigateToHome: () -> Unit = {}) {
     var username by remember { mutableStateOf("") }
@@ -217,5 +218,7 @@ fun LoginScreen(navigateToSignUp: () -> Unit, navigateToHome: () -> Unit = {}) {
         }
     }
 }
+
+
 
 

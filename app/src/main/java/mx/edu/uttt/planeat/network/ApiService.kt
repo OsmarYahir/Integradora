@@ -41,7 +41,7 @@ interface ApiService {
 
     //Ingredientes
 
-    @GET("ingredientes/get")
+    @GET("ingredientes")
     suspend fun getIngredientes(): List<Ingrediente>
 
     @GET("ingredientes/{id}")
@@ -71,22 +71,23 @@ interface ApiService {
 
 
     //Platillos
-    @GET("platillos")
+    @GET("platillos/ListaPlatillos")
     suspend fun getPlatillos(): List<Platillo>
 
     @GET("platillos/{id}")
     suspend fun getPlatilloById(@Path("id") id: Int): Platillo
 
 
-    @Multipart
-    @POST("platillos")
-    suspend fun uploadPlatillo(
-        @Part("Titulo") titulo: RequestBody,
-        @Part("Descripcion") descripcion: RequestBody,
-        @Part("IdUsuario") idUsuario: RequestBody,
-        @Part("Fecha_Creacion") fechaCreacion: RequestBody, // <- Este debe estar en tu backend
-        @Part imagen: MultipartBody.Part
-    ): Response<Platillo>
+
+
+        @Multipart
+        @POST("platillos")
+        suspend fun uploadPlatillo(
+            @Part("Titulo") titulo: RequestBody,
+            @Part("Descripcion") descripcion: RequestBody,
+            @Part("IdUsuario") idUsuario: RequestBody,
+            @Part imagen: MultipartBody.Part
+        ): Response<Platillo>
 
 
 
@@ -135,10 +136,10 @@ interface ApiService {
 
     //calendario
 
-    @POST("fechaCalendario")
+    @POST("FechaCalendarios")
     suspend fun postFecha(@Body fecha: FechaCalendario): FechaCalendario
 
-    @GET("fechaCalendario")
+    @GET("FechaCalendarios")
     suspend fun getFechas(): List<FechaCalendario>
 
 
