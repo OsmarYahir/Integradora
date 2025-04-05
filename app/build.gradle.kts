@@ -102,6 +102,7 @@ dependencies {
 
     implementation(libs.androidx.espresso.core)
     implementation(libs.firebase.storage.ktx)
+    implementation(libs.androidx.room.ktx)
 
     // Tests
     testImplementation(libs.junit)

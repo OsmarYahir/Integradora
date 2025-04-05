@@ -38,8 +38,6 @@ import mx.edu.uttt.planeat.R
 import mx.edu.uttt.planeat.states.LoginViewModelFactory
 import mx.edu.uttt.planeat.viewmodel.LoginViewModel
 
-
-
 // Paleta de colores
 val amarilloFuerte = Color(0xFFFFD94C)
 val amarilloClaro = Color(0xFFFFF8E1)
@@ -73,43 +71,92 @@ fun LoginScreen(navigateToSignUp: () -> Unit, navigateToHome: () -> Unit = {}) {
         }
     }
 
-
     Box(modifier = Modifier.fillMaxSize()) {
-        // Parte superior amarilla con ícono
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(300.dp) // más altura para dar espacio al ícono
-                .background(amarilloFuerte),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.Person,
-                contentDescription = "Usuario",
-                tint = Color.Black,
-                modifier = Modifier.size(70.dp)
-            )
+        // Fondo con diseño wave
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val width = size.width
+            val height = size.height
+
+            // Dibujamos el fondo amarillo claro
+            drawRect(amarilloClaro, Offset.Zero, size)
+
+            // Dibujamos una onda amarilla fuerte en la parte superior
+            val wavePath = Path().apply {
+                moveTo(0f, 0f)
+                lineTo(width, 0f)
+                lineTo(width, height * 0.35f)
+                cubicTo(
+                    width * 0.75f, height * 0.45f,
+                    width * 0.5f, height * 0.25f,
+                    0f, height * 0.38f
+                )
+                close()
+            }
+            drawPath(wavePath, amarilloFuerte, style = Fill)
         }
 
-        // Card blanca centrada
+        // Contenido principal
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = 200.dp), // bajamos la tarjeta un poco
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Logo y título superior
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 50.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Círculo con ícono
+                Box(
+                    modifier = Modifier
+                        .size(100.dp)
+                        .clip(CircleShape)
+                        .background(Color.White)
+                        .shadow(8.dp, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = "Usuario",
+                        tint = cafeOscuro,
+                        modifier = Modifier.size(60.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = "PlanEat",
+                    style = TextStyle(
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = cafeOscuro
+                    )
+                )
+
+                Text(
+                    text = "Tu planificador de comidas",
+                    style = TextStyle(
+                        fontSize = 16.sp,
+                        color = cafeOscuro
+                    )
+                )
+            }
+
+            // Card de login
             Card(
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
-                    .wrapContentHeight()
-                    .shadow(8.dp, RoundedCornerShape(20.dp)),
-                shape = RoundedCornerShape(20.dp),
+                    .padding(top = 40.dp)
+                    .shadow(elevation = 10.dp, shape = RoundedCornerShape(24.dp), spotColor = cafeMedio.copy(alpha = 0.3f)),
+                shape = RoundedCornerShape(24.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White)
             ) {
                 Column(
-                    modifier = Modifier.padding(24.dp),
+                    modifier = Modifier
+                        .padding(horizontal = 24.dp, vertical = 32.dp)
+                        .fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
@@ -119,98 +166,159 @@ fun LoginScreen(navigateToSignUp: () -> Unit, navigateToHome: () -> Unit = {}) {
                         color = cafeOscuro
                     )
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(30.dp))
 
+                    // Campo de usuario
                     OutlinedTextField(
                         value = username,
                         onValueChange = { username = it },
-                        label = { Text("Correo electrónico", color = cafeMedio) },
+                        label = {
+                            Text(
+                                "Correo electrónico",
+                                color = cafeMedio,
+                                fontSize = 14.sp
+                            )
+                        },
                         leadingIcon = {
-                            Icon(Icons.Default.Person, contentDescription = null, tint = cafeMedio)
+                            Icon(
+                                Icons.Default.Person,
+                                contentDescription = null,
+                                tint = cafeMedio,
+                                modifier = Modifier.size(22.dp)
+                            )
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(10.dp)),
+                            .clip(RoundedCornerShape(16.dp))
+                            .shadow(4.dp, RoundedCornerShape(16.dp), spotColor = cafeMedio.copy(alpha = 0.1f)),
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = amarilloClaro,
                             unfocusedContainerColor = amarilloClaro,
                             focusedIndicatorColor = Color.Transparent,
                             unfocusedIndicatorColor = Color.Transparent,
-                            cursorColor = cafeOscuro
-                        )
+                            cursorColor = cafeOscuro,
+                            focusedTextColor = cafeOscuro,
+                            unfocusedTextColor = cafeOscuro
+                        ),
+                        textStyle = TextStyle(fontSize = 16.sp)
                     )
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(20.dp))
 
+                    // Campo de contraseña
                     OutlinedTextField(
                         value = password,
                         onValueChange = { password = it },
-                        label = { Text("Contraseña", color = cafeMedio) },
+                        label = {
+                            Text(
+                                "Contraseña",
+                                color = cafeMedio,
+                                fontSize = 14.sp
+                            )
+                        },
                         leadingIcon = {
-                            Icon(Icons.Default.Lock, contentDescription = null, tint = cafeMedio)
+                            Icon(
+                                Icons.Default.Lock,
+                                contentDescription = null,
+                                tint = cafeMedio,
+                                modifier = Modifier.size(22.dp)
+                            )
                         },
                         trailingIcon = {
                             IconButton(onClick = { passwordVisible = !passwordVisible }) {
                                 Icon(
                                     imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
                                     contentDescription = null,
-                                    tint = cafeMedio
+                                    tint = cafeMedio,
+                                    modifier = Modifier.size(22.dp)
                                 )
                             }
                         },
                         visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(10.dp)),
+                            .clip(RoundedCornerShape(16.dp))
+                            .shadow(4.dp, RoundedCornerShape(16.dp), spotColor = cafeMedio.copy(alpha = 0.1f)),
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = amarilloClaro,
                             unfocusedContainerColor = amarilloClaro,
                             focusedIndicatorColor = Color.Transparent,
                             unfocusedIndicatorColor = Color.Transparent,
-                            cursorColor = cafeOscuro
-                        )
+                            cursorColor = cafeOscuro,
+                            focusedTextColor = cafeOscuro,
+                            unfocusedTextColor = cafeOscuro
+                        ),
+                        textStyle = TextStyle(fontSize = 16.sp)
                     )
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(30.dp))
 
+                    // Mostrar mensajes de error
                     if (isLoading) {
-                        CircularProgressIndicator(color = cafeOscuro)
+                        CircularProgressIndicator(
+                            color = cafeOscuro,
+                            modifier = Modifier.size(32.dp)
+                        )
                     }
 
                     errorMessage?.let { msg ->
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = msg,
-                            color = Color.Red,
-                            fontSize = 14.sp
-                        )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp)
+                                .background(Color.Red.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
+                                .padding(8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = msg,
+                                color = Color.Red,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
                     }
 
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // Botón de inicio de sesión
                     Button(
                         onClick = {
                             viewModel.login(username, password)
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(48.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = cafeOscuro)
+                            .height(56.dp)
+                            .shadow(8.dp, RoundedCornerShape(16.dp)),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = cafeOscuro,
+                            contentColor = Color.White
+                        ),
+                        elevation = ButtonDefaults.buttonElevation(
+                            defaultElevation = 6.dp,
+                            pressedElevation = 8.dp
+                        )
                     ) {
                         Text(
                             text = "Iniciar sesión",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
 
-                    TextButton(onClick = { navigateToSignUp() }) {
+                    // Enlace para registrarse
+                    TextButton(
+                        onClick = { navigateToSignUp() },
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    ) {
                         Text(
                             text = "¿No tienes cuenta? Regístrate ahora",
                             color = cafeOscuro,
-                            fontSize = 14.sp
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium
                         )
                     }
                 }
@@ -218,7 +326,3 @@ fun LoginScreen(navigateToSignUp: () -> Unit, navigateToHome: () -> Unit = {}) {
         }
     }
 }
-
-
-
-

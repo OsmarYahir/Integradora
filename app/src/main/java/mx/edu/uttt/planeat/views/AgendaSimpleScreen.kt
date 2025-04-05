@@ -42,7 +42,8 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AgendaSimpleScreen(
-    onBack: () -> Unit = {}
+    onBack: () -> Unit = {},
+    navigateToDetalleReceta: (Int) -> Unit // 👈 nuevo parámetro
 ) {
     // Elegant color palette (matching the previous screen)
     val cafeOscuro = Color(0xFF3E2723)
@@ -377,6 +378,7 @@ fun AgendaSimpleScreen(
                                             Row(
                                                 modifier = Modifier
                                                     .fillMaxWidth()
+                                                    .clickable { navigateToDetalleReceta(receta.IdReceta) } // 👈 click que navega
                                                     .padding(vertical = 8.dp),
                                                 verticalAlignment = Alignment.CenterVertically
                                             ) {
@@ -388,6 +390,9 @@ fun AgendaSimpleScreen(
                                                 )
 
                                                 Spacer(modifier = Modifier.width(12.dp))
+
+
+
 
                                                 Column {
                                                     Text(

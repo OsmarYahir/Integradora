@@ -72,17 +72,17 @@ class FavoritoViewModel : ViewModel() {
         }
     }
 
-    // Método para agregar favoritos
-    fun addFavorito(idReceta: Int, idUsuarioActual: Int) {
+    fun addFavorito(idUsuarioActual: Int, idReceta: Int) {
         viewModelScope.launch {
             _isLoading.value = true
             _errorMessage.value = null
 
             try {
+                // No asignamos el IdFavorito, ya que se autogenera en el servidor
                 val nuevoFavorito = Favorito(
-                    IdFavorito = 0,
+                    IdFavorito = 0,  // Esto lo dejamos en 0, el servidor lo generará
                     IdUsuario = idUsuarioActual,  // Usamos el idUsuarioActual
-                    IdReceta = idReceta
+                    IdReceta = idReceta  // Usamos el idReceta de la receta seleccionada
                 )
 
                 val response = ApiClient.apiService.postFavorito(nuevoFavorito)
@@ -100,6 +100,7 @@ class FavoritoViewModel : ViewModel() {
             }
         }
     }
+
 
     // Método para eliminar favoritos
     fun removeFavorito(idFavorito: Int, idUsuarioActual: Int) {

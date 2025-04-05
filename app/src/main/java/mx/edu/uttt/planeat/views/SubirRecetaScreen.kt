@@ -2,6 +2,7 @@ package mx.edu.uttt.planeat.views
 
 import android.Manifest
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -26,6 +27,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import kotlinx.coroutines.launch
@@ -52,6 +54,20 @@ fun SubirRecetaScreen(
     val userPreferences = remember { UserPreferences(context) }
     val idUsuarioActual = userPreferences.getUserId()
 
+    var imagenBitmap by remember { mutableStateOf<Bitmap?>(null) }
+
+    val imageFile = remember { File(context.cacheDir, "temp_image.jpg") }
+    val imageUri = remember { FileProvider.getUriForFile(context, "${context.packageName}.provider", imageFile) }
+
+    val takePictureLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+        if (success) {
+            val bitmap = BitmapFactory.decodeFile(imageFile.absolutePath)
+            imagenBitmap = bitmap
+        }
+    }
+
+
+
     if (idUsuarioActual == -1) {
         // El usuario no ha iniciado sesión, redirigir a la pantalla de login
         LaunchedEffect(key1 = true) {
@@ -69,7 +85,6 @@ fun SubirRecetaScreen(
 
     var titulo by remember { mutableStateOf("") }
     var descripcion by remember { mutableStateOf("") }
-    var imagenBitmap by remember { mutableStateOf<Bitmap?>(null) }
 
     // Estado para ingredientes
     var nombreIngrediente by remember { mutableStateOf("") }
@@ -87,23 +102,26 @@ fun SubirRecetaScreen(
     // Estado para almacenar ID de receta creada
     var recetaId by remember { mutableStateOf<Int?>(null) }
 
+
+
+
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicturePreview()
     ) {
         it?.let { bitmap ->
-            val resizedBitmap = resizeBitmap(bitmap, 1024)
+            val resizedBitmap = resizeBitmap(bitmap, 1600)
             imagenBitmap = resizedBitmap
         }
     }
 
-    val permisoCamaraLauncher =
-        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-            if (isGranted) {
-                cameraLauncher.launch(null)
-            } else {
-                Toast.makeText(context, "Permiso denegado", Toast.LENGTH_SHORT).show()
-            }
+    val permisoCamaraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+        if (isGranted) {
+            takePictureLauncher.launch(imageUri)
+        } else {
+            Toast.makeText(context, "Permiso denegado", Toast.LENGTH_SHORT).show()
         }
+    }
+
 
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -155,11 +173,12 @@ fun SubirRecetaScreen(
                     cafeOscuro = cafeOscuro,
                     amarilloFuerte = amarilloFuerte,
                     onTomarFoto = { permisoCamaraLauncher.launch(Manifest.permission.CAMERA) },
+                    // Reemplaza el código existente en la sección "info" donde manejas la carga de la imagen
                     onContinuar = {
                         if (titulo.isNotBlank() && descripcion.isNotBlank() && imagenBitmap != null) {
                             val imagenFile = bitmapToFile(imagenBitmap!!, context)
 
-                            subirRecetaViewModel.uploadPlatilloDirectly(
+                            subirRecetaViewModel.uploadPlatillo(
                                 titulo = titulo,
                                 descripcion = descripcion,
                                 idUsuario = idUsuarioActual,
@@ -182,6 +201,8 @@ fun SubirRecetaScreen(
                                 snackbarHostState.showSnackbar("Completa todos los campos")
                             }
                         }
+
+
                     }
                 )
             }
@@ -602,7 +623,8 @@ fun bitmapToFile(bitmap: Bitmap, context: android.content.Context): File {
     file.createNewFile()
 
     val bos = ByteArrayOutputStream()
-    bitmap.compress(Bitmap.CompressFormat.JPEG, 80, bos) // Reduce quality to 80%
+    bitmap.compress(Bitmap.CompressFormat.JPEG, 100, bos) // Calidad máxima
+    // Reduce quality to 80%
 
     val outputStream = FileOutputStream(file)
     outputStream.write(bos.toByteArray())

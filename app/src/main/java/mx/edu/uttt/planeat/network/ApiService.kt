@@ -7,6 +7,7 @@ import mx.edu.uttt.planeat.models.FechaCalendario
 import mx.edu.uttt.planeat.models.Ingrediente
 import mx.edu.uttt.planeat.models.Platillo
 import mx.edu.uttt.planeat.models.PlatilloPaso
+import mx.edu.uttt.planeat.models.Puntuaciones
 import mx.edu.uttt.planeat.models.Recomendacion
 import mx.edu.uttt.planeat.models.Usuario
 import okhttp3.MultipartBody
@@ -89,7 +90,9 @@ interface ApiService {
             @Part imagen: MultipartBody.Part
         ): Response<Platillo>
 
-
+    // Add this method to your ApiService interface
+    @POST("platillos")
+    suspend fun createPlatillo(@Body platillo: Platillo): Response<Platillo>
 
     @PUT("platillos/{id}")
     suspend fun updatePlatillo(@Path("id") id: Int, @Body platillo: Platillo): Platillo
@@ -119,19 +122,19 @@ interface ApiService {
     //favoritos
 
 
-    @GET("favoritos")
+    @GET("Favoritos")
     suspend fun getFavoritos(): List<Favorito>
 
 
-    @GET("favoritos/{id}")
+    @GET("Favoritos/{id}")
     suspend fun getFavoritoById(@Path("id") id: Int): Favorito
 
 
-    @POST("favoritos")
+    @POST("Favoritos")
     suspend fun postFavorito(@Body favorito: Favorito): Response<Favorito>
 
 
-    @DELETE("favoritos/{id}")
+    @DELETE("Favoritos/{id}")
     suspend fun deleteFavorito(@Path("id") id: Int): Response<Unit>
 
     //calendario
@@ -180,5 +183,28 @@ interface ApiService {
 
     @DELETE("Recomendaciones/{id}")
     suspend fun eliminarRecomendacion(@Path("id") id: Int): Response<Unit>
+
+    //Puntuaciones
+
+    @GET("Puntuaciones")
+    suspend fun getPuntuaciones(): List<Puntuaciones>
+
+    @GET("Puntuaciones/{id}")
+    suspend fun getPuntuacionById(@Path("id") id: Int): Puntuaciones
+
+    @POST("Puntuaciones")
+    suspend fun agregarPuntuacion(@Body puntuacion: Puntuaciones): Response<Unit>
+
+
+    @PUT("Puntuaciones/{id}")
+    suspend fun actualizarPuntuacion(
+        @Path("id") id: Int,
+        @Body puntuacion: Puntuaciones
+    ): Response<Unit>
+
+    @DELETE("Puntuaciones/{id}")
+    suspend fun eliminarPuntuacion(@Path("id") id: Int): Response<Unit>
+
+
 
 }

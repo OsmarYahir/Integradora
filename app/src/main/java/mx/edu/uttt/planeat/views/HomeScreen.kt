@@ -38,10 +38,14 @@ import mx.edu.uttt.planeat.R
 import mx.edu.uttt.planeat.models.Platillo
 import mx.edu.uttt.planeat.response.UserPreferences
 import mx.edu.uttt.planeat.viewmodels.BandejaRecetaViewModel
+import mx.edu.uttt.planeat.viewmodels.FechaCalendarioViewModel
 import mx.edu.uttt.planeat.viewmodels.PlatilloViewModel
 import mx.edu.uttt.planeat.viewmodels.RecomendacionViewModel
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+
 
 @Composable
 fun HomeScreen(
@@ -71,6 +75,9 @@ fun HomeScreen(
     val bandejaViewModel: BandejaRecetaViewModel = viewModel()
     val platilloViewModel: PlatilloViewModel = viewModel()
     val recomendacionViewModel: RecomendacionViewModel = viewModel()
+    val fechaCalendarioViewModel: FechaCalendarioViewModel = viewModel()
+    val fechasCalendario by fechaCalendarioViewModel.fechas.collectAsState()
+
 
     val recomendaciones by recomendacionViewModel.recomendaciones.collectAsState()
     val bandejas by bandejaViewModel.bandejaRecetas.collectAsState()
@@ -79,29 +86,31 @@ fun HomeScreen(
     val hoy = LocalDate.now()
     val formattedDate = hoy.format(DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM"))
 
-    val recetasHoy = remember(bandejas, platillos) {
-        val fechaId = bandejas.find {
-            it.IdUsuario == idUsuario &&
-                    it.IdCalendario.let { idCal ->
-                        // Reemplaza esto con una mejor lógica si puedes cruzar con la tabla `FechaCalendario`
-                        true // temporalmente acepta todos
-                    }
-        }?.IdCalendario
 
-        val bandejasDelDia = bandejas.filter {
-            it.IdUsuario == idUsuario && it.IdCalendario == fechaId
+
+    val recetasHoy = remember(bandejas, platillos, fechasCalendario) {
+        val bandejasUsuario = bandejas.filter { it.IdUsuario == idUsuario }
+
+        val bandejasDeHoy = bandejasUsuario.filter { bandeja ->
+            val fecha = fechasCalendario.find { it.IdCalendario == bandeja.IdCalendario }
+            fecha?.Anio == hoy.year &&
+                    fecha.Mes == hoy.monthValue &&
+                    fecha.Dia == hoy.dayOfMonth
         }
 
         platillos.filter { platillo ->
-            bandejasDelDia.any { it.IdReceta == platillo.IdReceta }
+            bandejasDeHoy.any { it.IdReceta == platillo.IdReceta }
         }
     }
+
 
     LaunchedEffect(true) {
         platilloViewModel.loadPlatillos()
         bandejaViewModel.obtenerTodasLasBandejas()
+        fechaCalendarioViewModel.loadFechas() // Agrega esto
         recomendacionViewModel.cargarRecomendaciones()
     }
+
 
     Scaffold(
         bottomBar = {
@@ -351,21 +360,31 @@ fun RecetaCard(
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            // This would ideally be the recipe image
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(120.dp)
-                    .background(Color(0xFFE8E0D5))
                     .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.logo),
-                    contentDescription = "Recipe Image",
-                    modifier = Modifier.size(60.dp),
-                    contentScale = ContentScale.Crop
-                )
+                if (!receta.Imagen.isNullOrBlank()) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(receta.Imagen)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = "Imagen de la receta",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Image(
+                        painter = painterResource(id = R.drawable.logo),
+                        contentDescription = "Sin imagen",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.size(60.dp)
+                    )
+                }
             }
 
             Column(
@@ -383,36 +402,18 @@ fun RecetaCard(
                 )
 
                 Spacer(modifier = Modifier.height(4.dp))
-
                 Text(
-                    text = "Tiempo de preparación: 30 min",
-                    fontSize = 12.sp,
+                    text = receta.Descripcion ?: "",
+                    fontSize = 13.sp,
                     color = textLight,
-                    maxLines = 1
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Favorite,
-                        contentDescription = null,
-                        tint = textLight,
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = "Favorita",
-                        fontSize = 12.sp,
-                        color = textLight
-                    )
-                }
             }
         }
     }
 }
+
 
 @Composable
 fun EmptyRecetasCard(
@@ -487,7 +488,7 @@ fun RecomendacionesList(
             recomendaciones.forEach { recomendacion ->
                 // Access the fields using reflection or modify based on your actual model
                 val motivo = "Basado en tus preferencias"
-                val idReceta = 1 // Replace with actual ID
+                val idReceta = 2 // Replace with actual ID
 
                 Row(
                     modifier = Modifier

@@ -51,28 +51,32 @@ import coil.compose.rememberImagePainter
 import androidx.compose.foundation.Image
 import androidx.compose.ui.res.painterResource
 import coil.compose.AsyncImage
+import mx.edu.uttt.planeat.viewmodels.PuntuacionesViewModel
 
 @Composable
 fun RecetasSocialScreen(
     onNavigateToDetail: (Platillo) -> Unit,
     platilloViewModel: PlatilloViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
-    usuarioViewModel: UsuariosViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+    usuarioViewModel: UsuariosViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
+    puntuacionesViewModel: PuntuacionesViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 ) {
-    // Paleta de colores más moderna y elegante
-    val colorPrimary = Color(0xFFFA9600) // Naranja elegante
-    val colorSecondary = Color(0xFF2D3142) // Azul oscuro casi negro
-    val colorBackground = Color(0xFFF8F9FA) // Gris muy claro
+    // Paleta de colores actualizada para un aspecto más premium
+    val colorPrimary = Color(0xFFFDDC58) // Naranja vibrante
+    val colorSecondary = Color(0xFF1E2A3A) // Azul oscuro profundo
+    val colorBackground = Color(0xFFF9FAFB) // Gris claro con toque de azul
     val colorSurface = Color.White
-    val colorAccent = Color(0xFFE76F51) // Coral para acentos
+    val colorAccent = Color(0xFFFF5252) // Rojo coral para acentos
 
     val platillos by platilloViewModel.platillos.collectAsState()
     val isLoading by platilloViewModel.isLoading.collectAsState()
     val errorMessage by platilloViewModel.errorMessage.collectAsState()
     val usuariosMap by usuarioViewModel.usuariosMap.collectAsState()
+    val puntuaciones by puntuacionesViewModel.puntuaciones.collectAsState()
 
     LaunchedEffect(Unit) {
         usuarioViewModel.loadUsuarios()
         platilloViewModel.loadPlatillos()
+        puntuacionesViewModel.loadPuntuaciones()
     }
 
     Scaffold(
@@ -82,40 +86,51 @@ fun RecetasSocialScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = 20.dp) // Aumentado el padding horizontal
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(24.dp)) // Aumentado el espaciado superior
 
-            // Título con estilo moderno
-            Text(
-                text = "Descubre",
-                fontSize = 32.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color = colorSecondary
-            )
+            // Título con animación y estilo premium
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 6.dp)
+            ) {
+                Text(
+                    text = "Descubre",
+                    fontSize = 36.sp, // Título más grande
+                    fontWeight = FontWeight.Black, // Más énfasis
+                    color = colorSecondary,
+                    letterSpacing = (-0.5).sp // Espaciado negativo para aspecto premium
+                )
 
-            Text(
-                text = "Recetas de la comunidad",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium,
-                color = colorSecondary.copy(alpha = 0.7f)
-            )
+                Text(
+                    text = "Recetas de la comunidad",
+                    fontSize = 18.sp, // Subtítulo más grande
+                    fontWeight = FontWeight.Medium,
+                    color = colorSecondary.copy(alpha = 0.6f), // Más sutil
+                    letterSpacing = 0.2.sp
+                )
+            }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(32.dp)) // Más espacio antes del contenido
 
-            // Estado de carga con animación
+            // Estado de carga con animación mejorada
             AnimatedVisibility(
                 visible = isLoading,
                 enter = fadeIn(),
                 exit = fadeOut()
             ) {
                 Box(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     CircularProgressIndicator(
                         color = colorPrimary,
-                        modifier = Modifier.size(48.dp)
+                        modifier = Modifier.size(56.dp),
+                        strokeWidth = 4.dp // Línea más gruesa
                     )
                 }
             }
@@ -123,42 +138,59 @@ fun RecetasSocialScreen(
             // Mensaje de error con estilo moderno
             errorMessage?.let {
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFFFFEBEE)
+                        containerColor = Color(0xFFFFEEEE) // Rojo más suave
                     ),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(16.dp), // Bordes más redondeados
+                    elevation = CardDefaults.cardElevation(
+                        defaultElevation = 2.dp // Sutil elevación
+                    )
                 ) {
                     Row(
-                        modifier = Modifier.padding(16.dp),
+                        modifier = Modifier.padding(20.dp), // Más padding
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.FoodBank,
                             contentDescription = null,
-                            tint = Color(0xFFB71C1C)
+                            tint = Color(0xFFE53935), // Rojo más brillante
+                            modifier = Modifier.size(24.dp)
                         )
-                        Spacer(modifier = Modifier.width(12.dp))
+                        Spacer(modifier = Modifier.width(16.dp))
                         Text(
                             text = it,
                             color = Color(0xFFB71C1C),
-                            fontWeight = FontWeight.Medium
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 16.sp // Texto más grande
                         )
                     }
                 }
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(24.dp))
             }
 
             // Lista de recetas con espaciado mejorado
             LazyColumn(
-                contentPadding = PaddingValues(bottom = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(24.dp)
+                contentPadding = PaddingValues(bottom = 32.dp), // Más padding en la parte inferior
+                verticalArrangement = Arrangement.spacedBy(32.dp) // Mayor separación entre elementos
             ) {
                 items(platillos) { platillo ->
                     val nombreUsuario = usuariosMap[platillo.IdUsuario] ?: "Usuario creativo"
 
+                    // Calcular la puntuación media para esta receta
+                    val recetaPuntuaciones = puntuaciones.filter { it.IdReceta == platillo.IdReceta }
+                    val puntuacionMedia = if (recetaPuntuaciones.isNotEmpty()) {
+                        recetaPuntuaciones.map { it.Numeracion }.average().toFloat()
+                    } else {
+                        0f
+                    }
+
+                    val receta = platillo.toRecetaSocial(nombreUsuario).copy(puntuacion = puntuacionMedia)
+
                     RecetaSocialCard(
-                        receta = platillo.toRecetaSocial(nombreUsuario),
+                        receta = receta,
                         colorPrimary = colorPrimary,
                         colorSecondary = colorSecondary,
                         colorSurface = colorSurface,
@@ -185,166 +217,259 @@ fun RecetaSocialCard(
     var liked by remember { mutableStateOf(false) }
     var saved by remember { mutableStateOf(false) }
 
-    // Handle Base64 image conversion
-    val bitmap = remember(receta.imagenReceta) {
-        if (receta.imagenReceta.isNotEmpty()) {
-            base64ToBitmap(receta.imagenReceta)
-        } else null
-    }
-
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .shadow(
-                elevation = 8.dp,
-                shape = RoundedCornerShape(20.dp),
-                spotColor = colorSecondary.copy(alpha = 0.1f)
+                elevation = 12.dp, // Sombra más profunda
+                shape = RoundedCornerShape(24.dp), // Bordes más redondeados
+                spotColor = colorSecondary.copy(alpha = 0.15f), // Sombra más sutil
+                ambientColor = colorSecondary.copy(alpha = 0.05f) // Sombra ambiental
             )
             .clickable { onNavigateToDetail() },
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = colorSurface)
+        shape = RoundedCornerShape(24.dp), // Bordes más redondeados
+        colors = CardDefaults.cardColors(
+            containerColor = colorSurface,
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 0.dp // Sin elevación adicional
+        )
     ) {
         Box {
-            // Display the bitmap if available
-            if (bitmap != null) {
-                Image(
-                    bitmap = bitmap.asImageBitmap(),
-                    contentDescription = receta.titulo,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(220.dp),
-                    contentScale = ContentScale.Crop
-                )
+            // Imagen con mejor manejo y estilo
+            if (receta.imagenReceta.isNotEmpty()) {
+                Box {
+                    AsyncImage(
+                        model = receta.imagenReceta,
+                        contentDescription = receta.titulo,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(240.dp), // Imagen más grande
+                        contentScale = ContentScale.Crop,
+                        error = painterResource(id = R.drawable.logo)
+                    )
+
+                    // Gradiente mejorado sobre la imagen
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .background(
+                                brush = Brush.verticalGradient(
+                                    colors = listOf(
+                                        Color.Transparent,
+                                        Color.Black.copy(alpha = 0.1f), // Punto medio sutil
+                                        Color.Black.copy(alpha = 0.7f) // Más oscuro en la parte inferior
+                                    ),
+                                    startY = 50f
+                                )
+                            )
+                    )
+
+                    // Badge de puntuación en la esquina superior derecha
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(16.dp)
+                            .shadow(8.dp, CircleShape)
+                            .clip(CircleShape)
+                            .background(colorPrimary)
+                            .padding(horizontal = 12.dp, vertical = 8.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Star,
+                                contentDescription = "Puntuación",
+                                tint = Color.White,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = String.format("%.1f", receta.puntuacion),
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        }
+                    }
+                }
             } else {
-                // Show placeholder if no image is available
+                // Placeholder mejorado
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(220.dp)
-                        .background(colorSecondary.copy(alpha = 0.1f)),
+                        .height(240.dp) // Placeholder más grande
+                        .background(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(
+                                    colorSecondary.copy(alpha = 0.05f),
+                                    colorSecondary.copy(alpha = 0.15f)
+                                )
+                            )
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Rounded.FoodBank,
                         contentDescription = null,
-                        tint = colorSecondary.copy(alpha = 0.5f),
-                        modifier = Modifier.size(64.dp)
+                        tint = colorSecondary.copy(alpha = 0.3f),
+                        modifier = Modifier.size(72.dp) // Icono más grande
                     )
                 }
-            }
-            // Gradiente sobre la imagen para mejorar legibilidad
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(220.dp)
-                    .background(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(
-                                Color.Transparent,
-                                colorSecondary.copy(alpha = 0.8f)
-                            ),
-                            startY = 100f
-                        )
-                    )
-            )
 
-            // Información de la receta sobre la imagen
+                // Badge de puntuación para placeholder
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(16.dp)
+                        .shadow(8.dp, CircleShape)
+                        .clip(CircleShape)
+                        .background(colorPrimary)
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Star,
+                            contentDescription = "Puntuación",
+                            tint = Color.White,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = String.format("%.1f", receta.puntuacion),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
+                }
+            }
+
+            // Información de la receta sobre la imagen con mejor posicionamiento
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
-                    .padding(16.dp)
+                    .padding(20.dp) // Más padding
             ) {
                 Text(
                     text = receta.titulo,
-                    fontSize = 22.sp,
+                    fontSize = 24.sp, // Título más grande
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
                     maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    letterSpacing = (-0.3).sp // Espaciado negativo para aspecto premium
                 )
 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Mostrar puntuación con estrellas con mejor diseño
+                RatingDisplay(
+                    rating = receta.puntuacion,
+                    colorAccent = colorPrimary
+                )
             }
         }
 
-        // Resto del código sin cambios...
-        Column(modifier = Modifier.padding(16.dp)) {
-            // Información del autor
+        // Contenido de la tarjeta mejorado
+        Column(modifier = Modifier.padding(20.dp)) { // Más padding
+            // Información del autor con mejor diseño
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
+                // Avatar del usuario (puedes usar un placeholder circular)
+                Box(
+                    modifier = Modifier
+                        .size(36.dp) // Avatar más grande
+                        .clip(CircleShape)
+                        .background(colorPrimary.copy(alpha = 0.2f))
+                        .padding(8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
                     Text(
-                        text = receta.usuario,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = colorSecondary
+                        text = receta.usuario.first().toString().uppercase(),
+                        color = colorPrimary,
+                        fontWeight = FontWeight.Bold
                     )
-
-
                 }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Text(
+                    text = receta.usuario,
+                    fontSize = 16.sp, // Texto más grande
+                    fontWeight = FontWeight.SemiBold, // Más énfasis
+                    color = colorSecondary
+                )
+
+                Spacer(modifier = Modifier.weight(1f))
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp)) // Más espacio
 
+            // Descripción con mejor diseño
             Text(
                 text = receta.descripcion,
-                fontSize = 14.sp,
-                color = colorSecondary.copy(alpha = 0.7f),
+                fontSize = 15.sp, // Texto más grande
+                lineHeight = 24.sp, // Mayor espaciado entre líneas
+                color = colorSecondary.copy(alpha = 0.8f), // Color más oscuro para mejor legibilidad
                 maxLines = 3,
                 overflow = TextOverflow.Ellipsis
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(20.dp)) // Más espacio
 
-            // Acciones de la receta
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            // Botón mejorado
+            Button(
+                onClick = { onNavigateToDetail() },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = colorPrimary
+                ),
+                shape = RoundedCornerShape(30.dp), // Botón más redondeado
+                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp), // Más padding
+                modifier = Modifier.fillMaxWidth() // Botón de ancho completo
             ) {
-                // Botón Ver receta
-                Button(
-                    onClick = { onNavigateToDetail() },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = colorPrimary
-                    ),
-                    shape = RoundedCornerShape(20.dp),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
-                ) {
-                    Text(
-                        text = "Ver receta",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 12.sp
-                    )
-                }
+                Text(
+                    text = "Ver receta completa",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp, // Texto más grande
+                    letterSpacing = 0.5.sp // Mayor espaciado entre letras
+                )
             }
         }
     }
 }
 
-// Estado para el manejo de carga de imágenes
-enum class ImageLoadingState {
-    Loading,
-    Success,
-    Error
-}
+@Composable
+fun RatingDisplay(rating: Float, colorAccent: Color) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(2.dp) // Espaciado uniforme entre estrellas
+    ) {
+        // Mostrar 5 estrellas, rellenadas según la puntuación
+        for (i in 1..5) {
+            Icon(
+                imageVector = Icons.Default.Star,
+                contentDescription = null,
+                tint = if (i <= rating) colorAccent else Color.White.copy(alpha = 0.5f), // Mayor contraste
+                modifier = Modifier.size(18.dp) // Estrellas más grandes
+            )
+        }
 
-fun base64ToBitmap(base64String: String): Bitmap? {
-    return try {
-        val cleanBase64 = base64String.substringAfter(",")
-
-        val decodedBytes = Base64.decode(cleanBase64, Base64.DEFAULT)
-        BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
-    } catch (e: Exception) {
-        e.printStackTrace()
-        null
+        // Mostrar número de puntuación
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = String.format("%.1f", rating),
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.White
+        )
     }
 }
-
-// Asegúrate de tener una imagen placeholder en tus recursos
-// Añade esto a tu res/drawable folder
 
 data class RecetaSocial(
     val usuario: String,

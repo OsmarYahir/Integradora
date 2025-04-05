@@ -5,22 +5,105 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 import mx.edu.uttt.planeat.models.Platillo
 import mx.edu.uttt.planeat.network.ApiClient
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.MultipartBody
-import okhttp3.RequestBody
-import okhttp3.RequestBody.Companion.asRequestBody
-import okhttp3.RequestBody.Companion.toRequestBody
-import retrofit2.Response
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
 import android.net.Uri
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class SubirRecetaViewModel : ViewModel() {
 
-    // Keep this method for Firebase storage if needed
+    // Upload image to Firebase and then save the recipe with URL to API
+    fun uploadPlatillo(
+        titulo: String,
+        descripcion: String,
+        idUsuario: Int,
+        imageFile: File,
+        onSuccess: (Platillo) -> Unit,
+        onError: (String) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                // First upload image to Firebase
+                val imageUrl = uploadImageToFirebaseAsync(imageFile)
+
+                // Then send the recipe data with image URL to API
+                val platillo = uploadPlatilloWithUrlToApi(
+                    titulo = titulo,
+                    descripcion = descripcion,
+                    idUsuario = idUsuario,
+                    imageUrl = imageUrl
+                )
+
+                onSuccess(platillo)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                onError("Error: ${e.localizedMessage ?: e.toString()}")
+            }
+        }
+    }
+
+    // Coroutine-friendly Firebase upload
+    private suspend fun uploadImageToFirebaseAsync(imageFile: File): String = withContext(Dispatchers.IO) {
+        val storage = FirebaseStorage.getInstance()
+        val storageRef: StorageReference = storage.reference
+        val imageRef = storageRef.child("images/${UUID.randomUUID()}.jpg")
+
+        try {
+            // Upload the file
+            val uploadTask = imageRef.putFile(Uri.fromFile(imageFile)).await()
+
+            // Get download URL
+            return@withContext imageRef.downloadUrl.await().toString()
+        } catch (e: Exception) {
+            throw Exception("Error al subir imagen a Firebase: ${e.localizedMessage}")
+        }
+    }
+
+    // Upload platillo data with image URL to API
+    private suspend fun uploadPlatilloWithUrlToApi(
+        titulo: String,
+        descripcion: String,
+        idUsuario: Int,
+        imageUrl: String
+    ): Platillo {
+        return withContext(Dispatchers.IO) {
+            try {
+                // Clean the URL if needed
+                val cleanImageUrl = imageUrl.replace("\\u003d", "=").replace("\\u0026", "&")
+
+                // Create the platillo object
+                val platillo = Platillo(
+                    IdReceta = 0,
+                    Titulo = titulo,
+                    Descripcion = descripcion,
+                    Imagen = cleanImageUrl,
+                    Fecha_Creacion = obtenerFechaActual(),
+                    IdUsuario = idUsuario
+                )
+
+                // Log the request for debugging
+                println("Sending to API: ${platillo.toString()}")
+
+                val response = ApiClient.apiService.createPlatillo(platillo)
+
+                if (response.isSuccessful) {
+                    return@withContext response.body() ?: throw Exception("Respuesta vacía del servidor")
+                } else {
+                    val errorBody = response.errorBody()?.string() ?: "Sin detalles de error"
+                    throw Exception("Error API: ${response.code()} - ${response.message()} - $errorBody")
+                }
+            } catch (e: Exception) {
+                throw Exception("Error al guardar receta en API: ${e.localizedMessage}")
+            }
+        }
+    }
+
+    // Keep this for backward compatibility if needed
     fun uploadImageToFirebase(
         imageFile: File,
         onSuccess: (String) -> Unit,
@@ -44,93 +127,9 @@ class SubirRecetaViewModel : ViewModel() {
         }
     }
 
-    // Method to directly upload to your API without Firebase
-    fun uploadPlatilloDirectly(
-        titulo: String,
-        descripcion: String,
-        idUsuario: Int,
-        imageFile: File,
-        onSuccess: (Platillo) -> Unit,
-        onError: (String) -> Unit
-    ) {
-        viewModelScope.launch {
-            try {
-                // Create RequestBody instances for text data
-                val tituloBody = RequestBody.create("text/plain".toMediaTypeOrNull(), titulo)
-                val descripcionBody = RequestBody.create("text/plain".toMediaTypeOrNull(), descripcion)
-                val idUsuarioBody = RequestBody.create("text/plain".toMediaTypeOrNull(), idUsuario.toString())
-
-                // Create image part - trying with the name the server might be expecting
-                val requestFile = imageFile.asRequestBody("image/jpeg".toMediaTypeOrNull())
-
-                // Use the exact name that your API is expecting in the controller
-                // The backend is looking for a file where content disposition filename is not null
-                val imagePart = MultipartBody.Part.createFormData("file", imageFile.name, requestFile)
-
-                // Add some debugging
-                println("Uploading file: ${imageFile.name}, size: ${imageFile.length()}")
-
-                // Call the API
-                val response = ApiClient.apiService.uploadPlatillo(
-                    titulo = tituloBody,
-                    descripcion = descripcionBody,
-                    idUsuario = idUsuarioBody,
-                    imagen = imagePart
-                )
-
-                if (response.isSuccessful) {
-                    response.body()?.let(onSuccess) ?: onError("Respuesta vacía del servidor")
-                } else {
-                    // Try to get the error body for more details
-                    val errorBody = response.errorBody()?.string() ?: "Sin detalles de error"
-                    onError("Error: ${response.code()} - ${response.message()} - $errorBody")
-                }
-            } catch (e: Exception) {
-                // Log the full exception for debugging
-                e.printStackTrace()
-                onError("Excepción: ${e.localizedMessage ?: e.toString()}")
-            }
-        }
-    }
-
-    // Only if you want to keep using Firebase and then send URL to API
-    // (requires API modification)
-//    fun uploadPlatilloWithImageUrl(
-//        titulo: String,
-//        descripcion: String,
-//        idUsuario: Int,
-//        imageUrl: String,
-//        onSuccess: (Platillo) -> Unit,
-//        onError: (String) -> Unit
-//    ) {
-//        viewModelScope.launch {
-//            try {
-//                val tituloBody = titulo.toRequestBody("text/plain".toMediaTypeOrNull())
-//                val descripcionBody = descripcion.toRequestBody("text/plain".toMediaTypeOrNull())
-//                val idUsuarioBody = idUsuario.toString().toRequestBody("text/plain".toMediaTypeOrNull())
-//                val imageUrlBody = imageUrl.toRequestBody("text/plain".toMediaTypeOrNull())
-//
-//                // This would only work if your API is modified to accept URLs
-//                val response: Response<Platillo> = ApiClient.apiService.uploadPlatilloWithUrl(
-//                    titulo = tituloBody,
-//                    descripcion = descripcionBody,
-//                    idUsuario = idUsuarioBody,
-//                    imagenUrl = imageUrlBody
-//                )
-//
-//                if (response.isSuccessful) {
-//                    response.body()?.let(onSuccess) ?: onError("Error: Respuesta vacía del servidor")
-//                } else {
-//                    onError("Error: ${response.code()} - ${response.message()}")
-//                }
-//            } catch (e: Exception) {
-//                onError("Excepción: ${e.localizedMessage}")
-//            }
-//        }
-//    }
-
     private fun obtenerFechaActual(): String {
-        val formato = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        val formato = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
+        formato.timeZone = TimeZone.getTimeZone("UTC")
         return formato.format(Date())
     }
 }

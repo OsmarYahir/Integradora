@@ -56,6 +56,9 @@ fun RecetasFavoritasScreen(
     val userPreferences = UserPreferences(context)
     val idUsuarioActual = userPreferences.getUserId()
 
+    Log.d("DEBUG", "ID de usuario actual desde UserPreferences: $idUsuarioActual")
+
+
     LaunchedEffect(idUsuarioActual) {
         favoritoViewModel.loadFavoritosPorUsuario(idUsuarioActual)
         platilloViewModel.loadPlatillos()
@@ -65,8 +68,16 @@ fun RecetasFavoritasScreen(
     // Filtrar solo los favoritos del usuario actualval platillosFavoritos = platillos.filter { platillo ->
     //    favoritos.any { it.IdUsuario == idUsuarioActual && it.IdReceta == platillo.IdReceta }
     //}
-    val platillosFavoritos = platillos.filter { platillo ->
-        favoritos.any { it.IdUsuario == idUsuarioActual && it.IdReceta == platillo.IdReceta }
+    val platillosFavoritos = if (favoritos.isNotEmpty() && platillos.isNotEmpty()) {
+        val favoritosDelUsuario = favoritos.filter { it.IdUsuario == idUsuarioActual }
+        val idsFavoritos = favoritosDelUsuario.map { it.IdReceta }
+
+        val resultado = platillos.filter { it.IdReceta in idsFavoritos }
+        Log.d("DEBUG", "Platillos favoritos encontrados: $resultado")
+        resultado
+    } else {
+        Log.d("DEBUG", "Favoritos o platillos vacíos")
+        emptyList()
     }
 
 

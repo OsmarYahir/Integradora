@@ -73,7 +73,8 @@ fun NavigationWrapper(navHostController: NavHostController) {
                 usuarioViewModel = usuarioViewModel,
                 onNavigateToDetail = { platillo ->
                     navHostController.navigate("recetaDetail/${platillo.IdReceta}")
-                }
+                },
+                puntuacionesViewModel = viewModel()
             )
         }
 
@@ -169,13 +170,17 @@ fun NavigationWrapper(navHostController: NavHostController) {
 
 
         composable("agendaSimple") {
-            AgendaSimpleScreen(onBack = { navHostController.popBackStack() })
+            AgendaSimpleScreen(onBack = { navHostController.popBackStack() },
+                navigateToDetalleReceta = { idReceta -> navHostController.navigate("recetaDetail/$idReceta") })
         }
 
         composable("logout") {
             // Usar el ViewModel con la factory que provee el Context
-            val loginViewModel: LoginViewModel = viewModel(factory = LoginViewModelFactory(context))
-            LogoutScreen(viewModel = loginViewModel)
+            val viewModel: LoginViewModel = viewModel(
+                factory = LoginViewModelFactory(context)
+            )
+            ProfileScreen(navigateToLogin = { navHostController.navigate("login") })
+
         }
 
 
